@@ -1,0 +1,70 @@
+---
+title: "Final_Project"
+author: "Jared"
+date: '2023-06-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+master<-read_csv("/Users/jaredhayes/Downloads/archive/Master.csv")
+pitching<-read_csv("/Users/jaredhayes/Downloads/archive/Pitching.csv")
+batting<-read_csv("/Users/jaredhayes/Downloads/archive/Batting.csv")
+HOF<-read_csv("/Users/jaredhayes/Downloads/archive/HallOfFame.csv")
+pitching<-pitching%>%
+  mutate(IP=IPouts/3)%>%
+  group_by(playerID)%>%
+  summarise(wins=sum(W),total_IP=sum(IPouts),avg_ERA=mean(ERA))
+batting<-batting%>%
+  mutate(batting_average=H/AB)%>%
+  group_by(playerID)%>%
+  summarise(hits=sum(H),HRS=sum(HR),average_average=mean(batting_average))
+HOF<-HOF%>%
+  filter(inducted=="Y"&category=="Player")%>%
+  select(playerID,inducted)
+master<-master%>%
+  select(playerID,nameFirst,nameLast)
+```
+
+
+```{r setup, include=FALSE}
+ 
+master_pitching<-left_join(master,pitching)
+master_batting<-left_join(master,batting)
+master_HOF<-left_join(master,HOF)
+master_HOF$inducted <- ifelse(is.na(master_HOF$inducted), "N", master_HOF$inducted)
+master_pitching<-na.omit(master_pitching)
+master_batting<-na.omit(master_batting)
+HOF_batting<-left_join(master_batting,master_HOF)
+HOF_pitching<-left_join(master_pitching,master_HOF)
+```
+
+
+```{r setup, include=FALSE}
+master_pitching<-master_pitching%>%
+  group_by(playerID)%>%
+  summarise(wins=sum(W),total_IP=sum(IPouts),avg_ERA=mean(ERA))
+  
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
