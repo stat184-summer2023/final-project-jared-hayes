@@ -105,6 +105,7 @@ master<-master%>%
 ```
 Selected variables I wanted from table. 
 
+
 ```{r}
 master_pitching<-left_join(master,pitching)
 master_batting<-left_join(master,batting)
