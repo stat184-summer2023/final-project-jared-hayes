@@ -1,6 +1,6 @@
 ---
 title: "Initial EDA Basic Outline"
-author: "Names of all group members"
+author: "Jared Hayes "
 output: html_notebook
 ---
 
@@ -10,7 +10,7 @@ This is an outline for your Initial EDA. You can follow this outline, or you can
 
 State your specific research question and why it is interesting. 
 
-
+I am interested in finding out what career totals lead to batters and pitchers being inducted into the hall of fame. I am also interested in finding out how players career totals relate to their stats in a current year. It is interesting because it looks at both career totals to predict recognition and it also looks at career totals to predict stats for one year. 
 
 ## Data Processing 
 
@@ -18,24 +18,109 @@ State your specific research question and why it is interesting.
 
 Include R code and written explanation to import your **TWO** data sets.
 
+```{r}
+library(tidyverse)
+master<-read_csv("/Users/jaredhayes/Downloads/archive/Master.csv")
+pitching<-read_csv("/Users/jaredhayes/Downloads/archive/Pitching.csv")
+batting<-read_csv("/Users/jaredhayes/Downloads/archive/Batting.csv")
+HOF<-read_csv("/Users/jaredhayes/Downloads/archive/HallOfFame.csv")
+new_data<-read_csv("/Users/jaredhayes/Downloads/mlbbat10.csv")
+```
+Used read_csv command and provided where on the computer the files are located. 
+
 #### Data Wrangling 
 
 Include R code and written explanation for wangling your data (you can make multiple wrangled data sets). 
 
+```{r}
+pitching<-pitching%>%
+  mutate(IP=IPouts/3)%>%
+  group_by(playerID)%>%
+  summarise(wins=sum(W),total_IP=sum(IPouts),avg_ERA=mean(ERA))
+```
+Created new variables and added them to the table. 
 
+```{r}
+batting<-batting%>%
+  mutate(batting_average=H/AB)%>%
+  group_by(playerID)%>%
+  summarise(hits=sum(H),HRS=sum(HR),average_average=mean(batting_average))
+```
+Created New variables and added them to the table as well as summarised players year stats into career totals. 
+
+```{r}
+HOF<-HOF%>%
+  filter(inducted=="Y"&category=="Player")%>%
+  select(playerID,inducted)
+```
+Filter out values based off criteria then selected the variables I wanted. 
+```{r}
+master<-master%>%
+  select(playerID,nameFirst,nameLast)
+```
+Selected variables I wanted from table. 
+
+```{r}
+master_pitching<-left_join(master,pitching)
+master_batting<-left_join(master,batting)
+master_HOF<-left_join(master,HOF)
+```
+Joined tables based off player ID. 
+
+```{r}
+master_HOF$inducted <- ifelse(is.na(master_HOF$inducted), "N", master_HOF$inducted)
+```
+Created new variable that replaced NA with N. 
+
+```{r}
+master_pitching<-na.omit(master_pitching)
+master_batting<-na.omit(master_batting)
+```
+Removed batting data for pitchers and pitching data for batters. As well removed ERA if it was infinite. 
+
+```{r}
+HOF_batting<-left_join(master_batting,master_HOF)
+HOF_pitching<-left_join(master_pitching,master_HOF)
+```
+Off player ID joined two tables so that I have a table for each batting and pitching that shows each players career totals as well as whether or not they made it into the hall of fame. 
 
 
 ## Data Visualization
 
 #### Plot 1
 
-Include R code to make one data visualization (I would encourage you to use 3 or more variables). Include a brief written description of what your graph shows. Is this graph helpful in answering your research question? If it is helpful, will you need to add/modify anything in this graph in the final report? 
+Include R code to make one data visualization (I would encourage you to use 3 or more variables). Include a brief written description of what your graph shows. Is this graph helpful in answering your research question? If it is helpful, will you need to add/modify anything in this graph in the final report?
 
+```{r}
+ggplot(HOF_batting) +
+  aes(
+    x = average_average,
+    y = hits,
+    colour = inducted,
+    size = HRS
+  ) +
+  geom_point(shape = "circle") +
+  scale_color_hue(direction = 1) +
+  theme_minimal()
+```
+This graph is helpful in managing my research question because it shows a trend of required hits, homeruns and batting average to reach the hall of fame. That was the goal of my research was to find around what career totals were good predictors for a player making the hall of fame. I will want to add facets to my graph as well as add conditions to remove players who did have a good sample size of games. 
 #### Plot 2
 
 Include R code to make one data visualization (I would encourage you to use 3 or more variables). Include a brief written description of what your graph shows. Is this graph helpful in answering your research question? If it is helpful, will you need to add/modify anything in this graph in the final report? 
 
+```{r}
+ggplot(HOF_pitching) +
+  aes(x = avg_ERA, y = wins, colour = total_IP) +
+  geom_point(shape = "circle", size = 1.5) +
+  scale_color_gradient() +
+  theme_minimal() +
+  facet_wrap(vars(inducted))+
+  xlim(0,10)
+```
+This graph shows that there is drastically different trends for players who made the hall of fame and who did not. For players who did not make the hall of fame there is a curve that predicts career wins off average ERA. For players who made the hall of fame it is much harder to find a trend off career totals. This helped answer my research question because you are able to see a trend for batters based off career totals but not for pitchers. I think the only thing I would want to change for my final report is to change the colors so that it is easier to see the differences in career innings pitched. 
 
 ## Conclusion
 
 Include your initial intuition as to what the answer to your research question is using the data sets and visualizations you created. 
+
+I think that there are career totals for batters that predict whether or not they made it into the hall of fame but do not think there are the same career predictors for pitchers. I also think that you are able to predict a player's career to some extent based off their performance in one year due to other graphs I have created. 
