@@ -28,6 +28,51 @@ new_data<-read_csv("/Users/jaredhayes/Downloads/mlbbat10.csv")
 ```
 Used read_csv command and provided where on the computer the files are located. 
 
+- Write out the origin and purpose (who/what/when/where/why/how data were collected)
+  - Investigate and explain key variables (types, coding, missingness, summary statistics/plots) are clearly presented. 
+  - investigate potential outliers
+  - [optional] consideration for transforming, mutating, or recoding variables (e.g., log transformations, numeric variable that's functionally dichotomous, new variables to be calculated)
+  - [optional] note inherent relationships among rows (e.g., autocorrelation, hierarchy, spatial/temporal proximity)
+  - note: You're just required to look for these sort of things and determine if further action is needed. If you look and decide no action is needed, just explain your process. 
+  
+Baseball Database: 
+
+Who: Baseball players, Managers, and Teams 
+
+What: Their Year by year statistics and awards 
+
+When: 1871-2015 
+
+Where: United States 
+
+Why: To collect comprehensive baseball data for the majority of major league history. 
+
+How: By creating a database. Player and manager info was stores in master file which had player id. Player id was used in some tables to connect info together. 
+
+Key variable is player id because it is used to connect all the different tables. Players are not going to have pitching data and batters are not going to have hitting data. As well managers will not have batting or pitching data. There is very little summary info. Data is collected for each year so there are no summary statistics. Are the variables are either numbers or characters. There is quite a bit of Nulls that will need to be removed. 
+
+Potential outliers are going to be players who had very short careers. Other potential outliers are going to batting data for pitchers and pitching data for batters. 
+
+Mlbbat10 
+
+Who: Major league players 
+
+What: Hitting statistics 
+
+Where: United States 
+
+When: 2010 
+
+Why: To examine players hitting data for a given year. 
+
+How: By creating a CSV file which has tidy data. 
+
+All variables are either numbers or characters. The only key variable is player names. Some variables are summary statistics by manipulating other variables. There is no missing data because 0s are used instead of NULL.
+
+The potential outliers are going to be players with small sample size and batting data for pitchers.
+
+
+
 #### Data Wrangling 
 
 Include R code and written explanation for wangling your data (you can make multiple wrangled data sets). 
@@ -101,7 +146,8 @@ ggplot(HOF_batting) +
   ) +
   geom_point(shape = "circle") +
   scale_color_hue(direction = 1) +
-  theme_minimal()
+  theme_minimal()+
+  ggtitle("Predicting Hall of Fame players based off career hitting stats ")
 ```
 This graph is helpful in managing my research question because it shows a trend of required hits, homeruns and batting average to reach the hall of fame. That was the goal of my research was to find around what career totals were good predictors for a player making the hall of fame. I will want to add facets to my graph as well as add conditions to remove players who did have a good sample size of games. 
 #### Plot 2
@@ -115,7 +161,8 @@ ggplot(HOF_pitching) +
   scale_color_gradient() +
   theme_minimal() +
   facet_wrap(vars(inducted))+
-  xlim(0,10)
+  xlim(0,10)+
+  ggtitle("Comparing career pitching stats for Hall of Fame vs non inductees ")
 ```
 This graph shows that there is drastically different trends for players who made the hall of fame and who did not. For players who did not make the hall of fame there is a curve that predicts career wins off average ERA. For players who made the hall of fame it is much harder to find a trend off career totals. This helped answer my research question because you are able to see a trend for batters based off career totals but not for pitchers. I think the only thing I would want to change for my final report is to change the colors so that it is easier to see the differences in career innings pitched. 
 
