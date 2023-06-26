@@ -1,6 +1,6 @@
 ---
 title: "Final Project Basic Outline"
-author: "Names of all group members"
+author: "Jared Hayes "
 output: html_notebook
 ---
 
@@ -10,7 +10,7 @@ This is an outline for your final project. You can follow this outline, or you c
 
 State your general specific question and why it is interesting. 
 
-
+I am interested in finding out what career totals lead to batters and pitchers being inducted into the hall of fame. I am also interested in finding out how players career totals relate to their stats in a current year. It is interesting because it looks at both career totals to predict recognition and it also looks at career totals to predict stats for one year. 
 
 ## Data Processing 
 
@@ -18,20 +18,208 @@ State your general specific question and why it is interesting.
 
 Include R code and written explanation to import your **TWO** data sets.
 
+```{r}
+rm(list = ls())
+library(tidyverse)
+master<-read_csv("/Users/jaredhayes/Downloads/archive/Master.csv")
+pitching<-read_csv("/Users/jaredhayes/Downloads/archive/Pitching.csv")
+batting<-read_csv("/Users/jaredhayes/Downloads/archive/Batting.csv")
+HOF<-read_csv("/Users/jaredhayes/Downloads/archive/HallOfFame.csv")
+new_data<-read_csv("/Users/jaredhayes/Downloads/mlbbat10.csv")
+```
+Used read_csv command and provided where on the computer the files are located. 
+- Write out the origin and purpose (who/what/when/where/why/how data were collected)
+  - Investigate and explain key variables (types, coding, missingness, summary statistics/plots) are clearly presented. 
+  - investigate potential outliers
+  - [optional] consideration for transforming, mutating, or recoding variables (e.g., log transformations, numeric variable that's functionally dichotomous, new variables to be calculated)
+  - [optional] note inherent relationships among rows (e.g., autocorrelation, hierarchy, spatial/temporal proximity)
+  - note: You're just required to look for these sort of things and determine if further action is needed. If you look and decide no action is needed, just explain your process. 
+  
+Baseball Database: 
+
+Who: Baseball players, Managers, and Teams 
+
+What: Their Year by year statistics and awards 
+
+When: 1871-2015 
+
+Where: United States 
+
+Why: To collect comprehensive baseball data for the majority of major league history. 
+
+How: By creating a database. Player and manager info was stores in master file which had player id. Player id was used in some tables to connect info together. 
+
+Key variable is player id because it is used to connect all the different tables. Players are not going to have pitching data and batters are not going to have hitting data. As well managers will not have batting or pitching data. There is very little summary info. Data is collected for each year so there are no summary statistics. Are the variables are either numbers or characters. There is quite a bit of Nulls that will need to be removed. 
+
+Potential outliers are going to be players who had very short careers. Other potential outliers are going to batting data for pitchers and pitching data for batters. 
+
+Mlbbat10 
+
+Who: Major league players 
+
+What: Hitting statistics 
+
+Where: United States 
+
+When: 2010 
+
+Why: To examine players hitting data for a given year. 
+
+How: By creating a CSV file which has tidy data. 
+
+All variables are either numbers or characters. The only key variable is player names. Some variables are summary statistics by manipulating other variables. There is no missing data because 0s are used instead of NULL.
+
+The potential outliers are going to be players with small sample size and batting data for pitchers.
+
+```{r}
+head(pitching)
+
+head(batting)
+
+head(HOF)
+
+head(new_data)
+```
 #### Data Wrangling 
 
 Include R code and written explanation for wangling your data (you can make multiple wrangled data sets). 
 
+Include R code and written explanation for wangling your data (you can make multiple wrangled data sets). 
+
+```{r}
+pitching<-pitching%>%
+  mutate(IP=IPouts/3)%>%
+  group_by(playerID)%>%
+  summarise(wins=sum(W),total_IP=sum(IPouts),avg_ERA=mean(ERA),Games=sum(G))
+```
+Created new variables and added them to the table. 
+
+```{r}
+batting<-batting%>%
+  mutate(batting_average=H/AB)%>%
+  group_by(playerID)%>%
+  summarise(hits=sum(H),HRS=sum(HR),average_average=mean(batting_average),Games=sum(G),At_bats=sum(AB))
+```
+Created New variables and added them to the table as well as summarised players year stats into career totals. 
+
+```{r}
+HOF<-HOF%>%
+  filter(inducted=="Y"&category=="Player")%>%
+  select(playerID,inducted)
+```
+Filter out values based off criteria then selected the variables I wanted. 
+```{r}
+master<-master%>%
+  select(playerID,nameFirst,nameLast)
+```
+Selected variables I wanted from table. 
 
 
+```{r}
+master_pitching<-left_join(master,pitching)
+master_batting<-left_join(master,batting)
+master_HOF<-left_join(master,HOF)
+```
+
+Joined tables based off player ID. 
+
+```{r}
+master_HOF$inducted <- ifelse(is.na(master_HOF$inducted), "N", master_HOF$inducted)
+```
+Created new variable that replaced NA with N. 
+
+```{r}
+master_pitching<-na.omit(master_pitching)
+master_batting<-na.omit(master_batting)
+```
+Removed batting data for pitchers and pitching data for batters. As well removed ERA if it was infinite. 
+```{r}
+HOF_batting<-left_join(master_batting,master_HOF)
+HOF_pitching<-left_join(master_pitching,master_HOF)
+```
+
+Off player ID joined two tables so that I have a table for each batting and pitching that shows each players career totals as well as whether or not they made it into the hall of fame. 
+
+```{r}
+HOF_batting$initial_last <- sub("^([A-Za-z]).*\\s(.*)$", "\\1 \\2", paste(HOF_batting$nameFirst, HOF_batting$nameLast))
+HOF_pitching$initial_last<-sub("^([A-Za-z]).*\\s(.*)$", "\\1 \\2", paste(HOF_pitching$nameFirst,HOF_pitching$nameLast))
+```
+```{r}
+new_data$initial_last<-new_data$name
+combined_data<-left_join(new_data,HOF_batting)
+combined_data<-combined_data%>%
+  filter(game>30)
+```
+Combine new_data and HOF batting my name 
+
+
+```{r}
+master_batting<-master_batting%>%
+  filter(Games>10)%>%
+  filter(At_bats>100)
+```
+Try and filter out outliers due to small smaple size. 
+```{r}
+master_pit<-master_pitching%>%
+  filter(Games>10)%>%
+  filter(total_IP>100)
+```
+Again trying to filter out possible outliers due to small sample size. 
 
 ## Data Visualization
 
 Include R code and written explanation for your data visualization(s) with at least 3 variables. You must have **at least** one graph. You may have more than one (I would encourage you to have more than one). 
 
+```{r}
+ggplot(HOF_batting) +
+  aes(
+    x = average_average,
+    y = hits,
+    colour = inducted,
+    size = HRS
+  ) +
+  geom_point(shape = "circle",alpha=0.5) +
+  scale_color_hue(direction = 1) +
+  theme_minimal()+
+  xlab("Average batting average")
+  ylab("Career hits")
+  ggtitle("Predicting Hall of Fame players based off career hitting stats ")
+```
+This graph is helpful in managing my research question because it shows a trend of required hits, homeruns and batting average to reach the hall of fame. That was the goal of my research was to find around what career totals were good predictors for a player making the hall of fame. I will want to add facets to my graph as well as add conditions to remove players who did have a good sample size of games.
 
+```{r}
+ggplot(HOF_pitching) +
+  aes(x = avg_ERA, y = wins, colour = total_IP) +
+  geom_point(shape = "circle", size = 1.5) +
+  scale_color_gradient() +
+  theme_minimal() +
+  facet_wrap(vars(inducted))+
+  xlim(0,10)+
+  xlab("Average ERA")+
+  ylab("Career Wins")
+  ggtitle("Comparing career pitching stats for Hall of Fame vs non inductees ")
+```
+This graph shows that there is drastically different trends for players who made the hall of fame and who did not. For players who did not make the hall of fame there is a curve that predicts career wins off average ERA. For players who made the hall of fame it is much harder to find a trend off career totals. This helped answer my research question because you are able to see a trend for batters based off career totals but not for pitchers. I think the only thing I would want to change for my final report is to change the colors so that it is easier to see the differences in career innings pitched. 
+```{r}
+ggplot(HOF_pitching) +
+  aes(x = wins, y = total_IP) +
+  geom_point(shape = "circle", size = 1.5, colour = "#112446") +
+  theme_minimal() +
+  facet_wrap(vars(inducted))+geom_smooth(method = "lm", se = FALSE, color = "blue") 
+```
+This graph shows that there is a clear correlation between innings pitches and wins. This is helpful because it shows me that wins matter more than innings pitched when predicting if a player makes it to the hall of time. 
 
-
+```{r}
+ 
+ggplot(combined_data) +
+  aes(x = slg, y = HRS, size = obp) +
+  geom_point(shape = "circle", colour = "#112446") +
+  theme_minimal()+
+  xlim(0,1)
+```
+This graph shows that it is hard to predict career performance off one year. This helps me answer my research question because it shows that career totals matter much more because it is hard to acheieve consistency. 
 ## Conclusion
 
-Answer your research question using the data sets and visualizations you created. 
+Answer your research question using the data sets and visualizations you created.
+
+I showed that wins and innings are equally important when determining if a plater makes it to the hall of fame. I also showed that innings pitched are not important because they are heavily correlated to wins. I showed that hits matters more than batting average to make it to the hall of time. I also showed that career stats do not predict stats in one year. Thus I answered my research question because I showed that career totals are better at predicting if a player makes it to the hall of fame when compared to rate stats.  

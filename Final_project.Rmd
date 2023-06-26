@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(esquisse)
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
 master<-read_csv("/Users/jaredhayes/Downloads/archive/Master.csv")
@@ -26,10 +27,6 @@ HOF<-HOF%>%
   select(playerID,inducted)
 master<-master%>%
   select(playerID,nameFirst,nameLast)
-```
-
-
-```{r setup, include=FALSE}
  
 master_pitching<-left_join(master,pitching)
 master_batting<-left_join(master,batting)
@@ -39,32 +36,52 @@ master_pitching<-na.omit(master_pitching)
 master_batting<-na.omit(master_batting)
 HOF_batting<-left_join(master_batting,master_HOF)
 HOF_pitching<-left_join(master_pitching,master_HOF)
+HOF_batting$initial_last <- sub("^([A-Za-z]).*\\s(.*)$", "\\1 \\2", paste(HOF_batting$nameFirst, HOF_batting$nameLast))
+HOF_pitching$initial_last<-sub("^([A-Za-z]).*\\s(.*)$", "\\1 \\2", paste(HOF_pitching$nameFirst,HOF_pitching$nameLast))
 ```
 
 
-```{r setup, include=FALSE}
-master_pitching<-master_pitching%>%
-  group_by(playerID)%>%
-  summarise(wins=sum(W),total_IP=sum(IPouts),avg_ERA=mean(ERA))
-  
+```{r}
+ 
+
+
+```
+```{r}
+ggplot(HOF_batting) +
+  aes(
+    x = average_average,
+    y = hits,
+    colour = inducted,
+    size = HRS
+  ) +
+  geom_point(shape = "circle") +
+  scale_color_hue(direction = 1) +
+  theme_minimal()
+ggplot(HOF_pitching) +
+  aes(x = avg_ERA, y = wins, colour = total_IP) +
+  geom_point(shape = "circle", size = 1.5) +
+  scale_color_gradient() +
+  theme_minimal() +
+  facet_wrap(vars(inducted))+
+  xlim(0,10)
+ggplot(HOF_pitching) +
+  aes(x = wins, y = total_IP) +
+  geom_point(shape = "circle", size = 1.5, colour = "#112446") +
+  theme_minimal() +
+  facet_wrap(vars(inducted))+geom_smooth(method = "lm", se = FALSE, color = "blue") 
+```
+```{r}
+new_data<-read_csv("/Users/jaredhayes/Downloads/mlbbat10.csv")
+new_data$initial_last<-new_data$name
+combined_data<-left_join(new_data,HOF_batting)
+combined_data<-combined_data%>%
+  filter(game>30)
+#esquisse::esquisser(data=combined_data)
+ggplot(combined_data) +
+  aes(x = slg, y = HRS, size = obp) +
+  geom_point(shape = "circle", colour = "#112446") +
+  theme_minimal()+
+  xlim(0,1)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+ 
